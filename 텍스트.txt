@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="주식일기장">
+<title>주식 일기장</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  :root {
+    --bg: #0a0a0a; --bg2: #151515; --bg3: #1e1e1e;
+    --accent: #c8f542; --red: #ff6b6b; --text: #f0f0f0;
+    --sub: #888; --border: #2a2a2a;
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+    min-height: 100vh; overflow-x: hidden;
+  }
+  #app { max-width: 480px; margin: 0 auto; min-height: 100vh; position: relative; }
+
+/* Header */
+.header {
+padding: calc(var(–safe-top) + 20px) 20px 0;
+border-bottom: 1px solid #1e1e1e;
+position: sticky; top: 0; background: var(–bg); z-index: 10;
+}
+.header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.header-label { font-size: 11px; color: var(–accent); letter-spacing: 3px; font-weight: 700; margin-bottom: 4px; }
+.header-title { font-size: 24px; font-weight: 900; letter-spacing: -1px; }
+.add-btn {
+width: 44px; height: 44px; border-radius: 50%; border: none;
+background: var(–accent); color: var(–bg); font-size: 26px; font-weight: 700;
+cursor: pointer; display: flex; align-items: center; justify-content: center;
+line-height: 1; flex-shrink: 0;
+}
+.tabs { display: flex; gap: 4px; background: #151515; border-radius: 24px; padding: 4px; margin-bottom: 0; }
+.tab-btn {
+flex: 1; padding: 8px 4px; border-radius: 20px; border: none;
+background: transparent; color: var(–sub); font-weight: 400;
+font-size: 13px; cursor: pointer; transition: all 0.2s;
+font-family: inherit;
+}
+.tab-btn.active { background: var(–accent); color: var(–bg); font-weight: 700; }
+
+/* Content */
+.content { padding: 16px; padding-bottom: calc(var(–safe-bottom) + 80px); }
+
+/* Filter */
+.filter-row { display: flex; gap: 6px; margin-bottom: 16px; }
+.filter-btn {
+padding: 6px 16px; border-radius: 20px;
+border: 1px solid var(–border); background: transparent;
+color: var(–sub); font-size: 13px; cursor: pointer;
+font-family: inherit; transition: all 0.2s;
+}
+.filter-btn.active { border-color: var(–accent); background: rgba(200,245,66,0.1); color: var(–accent); font-weight: 700; }
+
+/* Trade Card */
+.trade-card {
+background: var(–bg2); border-radius: 14px; padding: 14px 16px;
+margin-bottom: 10px; cursor: pointer;
+border-left: 3px solid transparent; transition: opacity 0.1s;
+}
+.trade-card.buy { border-left-color: var(–accent); }
+.trade-card.sell { border-left-color: var(–red); }
+.trade-card:active { opacity: 0.7; }
+.trade-row { display: flex; justify-content: space-between; align-items: flex-start; }
+.trade-name { font-weight: 800; font-size: 15px; }
+.trade-ticker { color: #555; font-size: 12px; margin-left: 4px; }
+.trade-badges { display: flex; gap: 6px; margin-top: 6px; align-items: center; }
+.badge {
+padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 700;
+background: rgba(255,255,255,0.08); color: #aaa;
+}
+.badge.green { background: rgba(200,245,66,0.15); color: var(–accent); }
+.badge.red { background: rgba(255,90,90,0.15); color: var(–red); }
+.trade-date { font-size: 12px; color: #555; }
+.trade-amount { font-weight: 800; font-size: 15px; text-align: right; }
+.trade-detail { font-size: 12px; color: #555; margin-top: 4px; }
+.trade-memo { font-size: 12px; color: #666; margin-top: 8px; border-top: 1px solid #222; padding-top: 8px; }
+.trade-emotion { font-size: 14px; margin-top: 6px; }
+
+/* Empty */
+.empty { text-align: center; padding: 60px 0; color: #444; }
+.empty-icon { font-size: 40px; margin-bottom: 12px; }
+
+/* Stats */
+.stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+.stat-card { background: var(–bg2); border-radius: 14px; padding: 16px; }
+.stat-label { font-size: 11px; color: var(–sub); margin-bottom: 8px; }
+.stat-value { font-size: 22px; font-weight: 800; }
+.pnl-card { background: var(–bg2); border-radius: 14px; padding: 18px; margin-bottom: 12px; }
+.pnl-label { font-size: 12px; color: var(–sub); margin-bottom: 10px; }
+.pnl-value { font-size: 28px; font-weight: 900; }
+.pnl-value.pos { color: var(–accent); }
+.pnl-value.neg { color: var(–red); }
+.emotion-card { background: var(–bg2); border-radius: 14px; padding: 18px; margin-bottom: 12px; }
+.emotion-row { margin-bottom: 10px; }
+.emotion-row-top { display: flex; justify-content: space-between; margin-bottom: 4px; font-size: 13px; }
+.emotion-bar-bg { height: 6px; background: #222; border-radius: 3px; }
+.emotion-bar-fill { height: 100%; background: var(–accent); border-radius: 3px; transition: width 0.5s; }
+
+/* Chart */
+.chart-card { background: var(–bg2); border-radius: 14px; padding: 18px; margin-bottom: 12px; }
+.chart-label { font-size: 12px; color: var(–sub); margin-bottom: 16px; }
+svg.chart { width: 100%; overflow: visible; }
+.timeline-card { background: var(–bg2); border-radius: 14px; padding: 18px; }
+.timeline-item { display: flex; gap: 12px; margin-bottom: 14px; align-items: flex-start; }
+.timeline-dot { width: 10px; height: 10px; border-radius: 50%; margin-top: 3px; flex-shrink: 0; }
+.timeline-dot.buy { background: var(–accent); }
+.timeline-dot.sell { background: var(–red); }
+.timeline-line { width: 1px; height: 30px; background: #222; margin: 4px auto 0; }
+.timeline-dot-col { display: flex; flex-direction: column; align-items: center; }
+.timeline-date { font-size: 11px; color: #555; }
+.timeline-name { font-weight: 700; font-size: 14px; }
+.timeline-type-buy { color: var(–accent); font-size: 12px; }
+.timeline-type-sell { color: var(–red); font-size: 12px; }
+.timeline-sub { font-size: 12px; color: #888; }
+
+/* Modal */
+.modal-overlay {
+position: fixed; inset: 0; background: rgba(0,0,0,0.85);
+z-index: 100; display: flex; align-items: flex-end;
+opacity: 0; pointer-events: none; transition: opacity 0.25s;
+}
+.modal-overlay.open { opacity: 1; pointer-events: all; }
+.modal {
+width: 100%; max-width: 480px; margin: 0 auto;
+background: var(–bg2); border-radius: 20px 20px 0 0;
+padding: 24px 20px calc(var(–safe-bottom) + 24px);
+transform: translateY(100%); transition: transform 0.3s cubic-bezier(.32,1,.23,1);
+max-height: 90vh; overflow-y: auto;
+}
+.modal-overlay.open .modal { transform: translateY(0); }
+.modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+.modal-title { font-weight: 800; font-size: 18px; }
+.modal-close { background: none; border: none; color: #888; font-size: 22px; cursor: pointer; padding: 4px; }
+
+/* Form */
+.form-grid { display: grid; gap: 14px; }
+.form-row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.form-row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+.form-label { font-size: 11px; color: var(–sub); display: block; margin-bottom: 6px; }
+.form-input, .form-select, .form-textarea {
+width: 100%; padding: 10px 12px; border-radius: 10px;
+border: 1px solid var(–border); background: #0d0d0d;
+color: var(–text); font-size: 14px; font-family: inherit; outline: none;
+-webkit-appearance: none;
+}
+.form-textarea { height: 80px; resize: none; }
+.emotion-btns { display: flex; gap: 6px; flex-wrap: wrap; }
+.emotion-btn {
+padding: 6px 12px; border-radius: 16px; border: 1px solid var(–border);
+background: transparent; color: #888; font-size: 13px; cursor: pointer;
+font-family: inherit; transition: all 0.15s;
+}
+.emotion-btn.active { border-color: var(–accent); background: rgba(200,245,66,0.1); color: var(–accent); }
+.submit-btn {
+width: 100%; padding: 14px; border-radius: 12px; border: none;
+background: var(–accent); color: var(–bg); font-weight: 800;
+font-size: 16px; cursor: pointer; font-family: inherit; margin-top: 4px;
+}
+
+/* Detail Modal */
+.detail-section { background: var(–bg3); border-radius: 12px; padding: 16px; margin-bottom: 12px; }
+.detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.detail-key { font-size: 11px; color: #666; margin-bottom: 4px; }
+.detail-val { font-weight: 700; font-size: 15px; }
+.delete-btn {
+width: 100%; padding: 14px; border-radius: 12px;
+border: 1px solid var(–red); background: transparent;
+color: var(–red); font-weight: 700; font-size: 15px;
+cursor: pointer; font-family: inherit;
+}
+.memo-text { font-size: 14px; line-height: 1.6; color: #ccc; }
+</style>
+
+</head>
+<body>
+<div id="app">
+  <!-- Header -->
+  <div class="header">
+    <div class="header-top">
+      <div>
+        <div class="header-label">STOCK JOURNAL</div>
+        <div class="header-title">주식 일기장 📈</div>
+      </div>
+      <button class="add-btn" onclick="openAddModal()">+</button>
+    </div>
+    <div class="tabs" style="margin-bottom:12px">
+      <button class="tab-btn active" onclick="switchTab('list',this)">📋 매매일지</button>
+      <button class="tab-btn" onclick="switchTab('stats',this)">📊 통계</button>
+      <button class="tab-btn" onclick="switchTab('chart',this)">📈 차트</button>
+    </div>
+  </div>
+
+  <!-- Content -->
+
+  <div class="content">
+    <!-- LIST -->
+    <div id="tab-list">
+      <div class="filter-row">
+        <button class="filter-btn active" onclick="setFilter('ALL',this)">전체</button>
+        <button class="filter-btn" onclick="setFilter('KR',this)">🇰🇷 국내</button>
+        <button class="filter-btn" onclick="setFilter('US',this)">🇺🇸 해외</button>
+      </div>
+      <div id="trade-list"></div>
+    </div>
+
+```
+<!-- STATS -->
+<div id="tab-stats" style="display:none">
+  <div id="stats-content"></div>
+</div>
+
+<!-- CHART -->
+<div id="tab-chart" style="display:none">
+  <div id="chart-content"></div>
+</div>
+```
+
+  </div>
+</div>
+
+<!-- Add Modal -->
+
+<div class="modal-overlay" id="add-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">새 매매 기록</div>
+      <button class="modal-close" onclick="closeModal('add-modal')">✕</button>
+    </div>
+    <div class="form-grid">
+      <div class="form-row2">
+        <div>
+          <label class="form-label">시장</label>
+          <select class="form-select" id="f-market">
+            <option value="KR">🇰🇷 국내</option>
+            <option value="US">🇺🇸 해외</option>
+          </select>
+        </div>
+        <div>
+          <label class="form-label">매매 구분</label>
+          <select class="form-select" id="f-type">
+            <option value="buy">📈 매수</option>
+            <option value="sell">📉 매도</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row2">
+        <div>
+          <label class="form-label">종목코드</label>
+          <input class="form-input" id="f-ticker" placeholder="005930 / AAPL">
+        </div>
+        <div>
+          <label class="form-label">종목명</label>
+          <input class="form-input" id="f-name" placeholder="삼성전자">
+        </div>
+      </div>
+      <div class="form-row3">
+        <div>
+          <label class="form-label">가격</label>
+          <input class="form-input" id="f-price" type="number" placeholder="72000">
+        </div>
+        <div>
+          <label class="form-label">수량</label>
+          <input class="form-input" id="f-qty" type="number" placeholder="10">
+        </div>
+        <div>
+          <label class="form-label">수수료</label>
+          <input class="form-input" id="f-fee" type="number" placeholder="360">
+        </div>
+      </div>
+      <div>
+        <label class="form-label">날짜</label>
+        <input class="form-input" id="f-date" type="date">
+      </div>
+      <div>
+        <label class="form-label">심리 상태</label>
+        <div class="emotion-btns" id="emotion-btns">
+          <button class="emotion-btn active" onclick="selectEmotion(this,'😄 신남')">😄 신남</button>
+          <button class="emotion-btn" onclick="selectEmotion(this,'😊 만족')">😊 만족</button>
+          <button class="emotion-btn" onclick="selectEmotion(this,'😐 보통')">😐 보통</button>
+          <button class="emotion-btn" onclick="selectEmotion(this,'😰 불안')">😰 불안</button>
+          <button class="emotion-btn" onclick="selectEmotion(this,'😢 후회')">😢 후회</button>
+          <button class="emotion-btn" onclick="selectEmotion(this,'😤 분함')">😤 분함</button>
+        </div>
+      </div>
+      <div>
+        <label class="form-label">메모 / 일기</label>
+        <textarea class="form-textarea" id="f-memo" placeholder="매매 이유, 시장 분석, 느낀 점을 기록해보세요..."></textarea>
+      </div>
+      <button class="submit-btn" onclick="addTrade()">기록 저장하기</button>
+    </div>
+  </div>
+</div>
+
+<!-- Detail Modal -->
+
+<div class="modal-overlay" id="detail-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="detail-title">종목명</div>
+      <button class="modal-close" onclick="closeModal('detail-modal')">✕</button>
+    </div>
+    <div id="detail-body"></div>
+  </div>
+</div>
+
+<script>
+const EMOTIONS = ['😄 신남','😊 만족','😐 보통','😰 불안','😢 후회','😤 분함'];
+let selectedEmotion = '😄 신남';
+let currentFilter = 'ALL';
+let currentTab = 'list';
+let selectedTradeId = null;
+
+// Load/Save
+function loadTrades() {
+  try { return JSON.parse(localStorage.getItem('stock_trades') || '[]'); } catch { return []; }
+}
+function saveTrades(t) { localStorage.setItem('stock_trades', JSON.stringify(t)); }
+
+let trades = loadTrades();
+if (!trades.length) {
+  trades = [
+    { id: 1, date: '2026-04-28', ticker: '005930', name: '삼성전자', type: 'buy', price: 72000, quantity: 10, market: 'KR', emotion: '😊 만족', memo: '실적 개선 기대로 매수', fee: 360 },
+    { id: 2, date: '2026-04-30', ticker: 'AAPL', name: 'Apple', type: 'buy', price: 195, quantity: 5, market: 'US', emotion: '😄 신남', memo: 'AI 모멘텀 기대', fee: 4.8 },
+    { id: 3, date: '2026-05-02', ticker: '005930', name: '삼성전자', type: 'sell', price: 74500, quantity: 5, market: 'KR', emotion: '😊 만족', memo: '단기 목표가 도달로 일부 매도', fee: 186 },
+  ];
+  saveTrades(trades);
+}
+
+function fmtCur(v, market) {
+  const abs = Math.abs(v);
+  if (market === 'US') return '$' + abs.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+  return '₩' + abs.toLocaleString('ko-KR');
+}
+
+// Tab
+function switchTab(tab, btn) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  ['list','stats','chart'].forEach(t => {
+    document.getElementById('tab-'+t).style.display = t === tab ? '' : 'none';
+  });
+  currentTab = tab;
+  renderAll();
+}
+
+function setFilter(f, btn) {
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  currentFilter = f;
+  renderList();
+}
+
+function renderAll() {
+  renderList();
+  renderStats();
+  renderChart();
+}
+
+// LIST
+function renderList() {
+  const filtered = currentFilter === 'ALL' ? trades : trades.filter(t => t.market === currentFilter);
+  const el = document.getElementById('trade-list');
+  if (!filtered.length) {
+    el.innerHTML = `<div class="empty"><div class="empty-icon">📋</div><div>매매 기록이 없어요</div><div style="font-size:13px;margin-top:6px">+ 버튼을 눌러 첫 기록을 추가해보세요</div></div>`;
+    return;
+  }
+  el.innerHTML = filtered.map(t => {
+    const total = fmtCur(t.price * t.quantity, t.market);
+    const memoHtml = t.memo ? `<div class="trade-memo">${t.memo.length > 60 ? t.memo.slice(0,60)+'...' : t.memo}</div>` : '';
+    return `
+    <div class="trade-card ${t.type}" onclick="openDetail(${t.id})">
+      <div class="trade-row">
+        <div>
+          <div class="trade-name">${t.name}<span class="trade-ticker">${t.ticker}</span></div>
+          <div class="trade-badges">
+            <span class="badge ${t.type==='buy'?'green':'red'}">${t.type==='buy'?'📈 매수':'📉 매도'}</span>
+            <span class="badge">${t.market==='KR'?'🇰🇷':'🇺🇸'}</span>
+            <span class="trade-date">${t.date}</span>
+          </div>
+        </div>
+        <div>
+          <div class="trade-amount">${total}</div>
+          <div class="trade-detail">${t.price.toLocaleString()} × ${t.quantity}주</div>
+        </div>
+      </div>
+      ${memoHtml}
+      <div class="trade-emotion">${t.emotion}</div>
+    </div>`;
+  }).join('');
+}
+
+// STATS
+function renderStats() {
+  const kr = trades.filter(t => t.market === 'KR');
+  const us = trades.filter(t => t.market === 'US');
+  const pnl = list => list.reduce((s,t) => {
+    if (t.type === 'sell') return s + t.price*t.quantity - t.fee;
+    return s - t.price*t.quantity - t.fee;
+  }, 0);
+  const krPnl = pnl(kr), usPnl = pnl(us);
+  const emotionCount = {};
+  trades.forEach(t => { emotionCount[t.emotion] = (emotionCount[t.emotion]||0)+1; });
+  const topEmotion = Object.entries(emotionCount).sort((a,b)=>b[1]-a[1])[0]?.[0] || '-';
+
+  const emotionRows = EMOTIONS.map(em => {
+    const cnt = emotionCount[em] || 0;
+    if (!cnt) return '';
+    const pct = trades.length ? (cnt/trades.length*100).toFixed(0) : 0;
+    return `<div class="emotion-row">
+      <div class="emotion-row-top"><span>${em}</span><span style="color:#666;font-size:12px">${cnt}회 (${pct}%)</span></div>
+      <div class="emotion-bar-bg"><div class="emotion-bar-fill" style="width:${pct}%"></div></div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('stats-content').innerHTML = `
+    <div class="stat-grid">
+      <div class="stat-card"><div class="stat-label">총 매매 횟수</div><div class="stat-value">${trades.length}회</div></div>
+      <div class="stat-card"><div class="stat-label">매수 / 매도</div><div class="stat-value">${trades.filter(t=>t.type==='buy').length} / ${trades.filter(t=>t.type==='sell').length}</div></div>
+    </div>
+    <div class="pnl-card">
+      <div class="pnl-label">국내 주식 손익 (KRW)</div>
+      <div class="pnl-value ${krPnl>=0?'pos':'neg'}">${krPnl>=0?'+':'-'}₩${Math.abs(krPnl).toLocaleString()}</div>
+    </div>
+    <div class="pnl-card">
+      <div class="pnl-label">해외 주식 손익 (USD)</div>
+      <div class="pnl-value ${usPnl>=0?'pos':'neg'}">${usPnl>=0?'+':'-'}$${Math.abs(usPnl).toFixed(2)}</div>
+    </div>
+    <div class="stat-card" style="margin-bottom:12px">
+      <div class="stat-label">가장 많은 심리 상태</div>
+      <div style="font-size:24px;margin-top:6px">${topEmotion}</div>
+    </div>
+    <div class="emotion-card">
+      <div class="pnl-label">심리 상태 분포</div>
+      ${emotionRows || '<div style="color:#444;font-size:13px">기록이 없어요</div>'}
+    </div>
+  `;
+}
+
+// CHART
+function renderChart() {
+  const sorted = [...trades].filter(t=>t.market==='KR').sort((a,b)=>a.date.localeCompare(b.date));
+  const byDate = {};
+  sorted.forEach(t => {
+    byDate[t.date] = (byDate[t.date]||0) + (t.type==='sell' ? t.price*t.quantity : -t.price*t.quantity);
+  });
+  const entries = Object.entries(byDate);
+  let running = 0;
+  const chartData = entries.map(([date,val]) => { running+=val; return {date, val:running}; });
+
+  let svgContent = '<div style="text-align:center;padding:30px 0;color:#444;font-size:13px">데이터가 부족합니다</div>';
+  if (chartData.length >= 2) {
+    const maxAbs = Math.max(...chartData.map(d=>Math.abs(d.val)),1);
+    const pts = chartData.map((d,i) => {
+      const x = (i/(chartData.length-1))*290+5;
+      const y = 60-(d.val/maxAbs)*50;
+      return `${x},${y}`;
+    }).join(' ');
+    const dots = chartData.map((d,i) => {
+      const x = (i/(chartData.length-1))*290+5;
+      const y = 60-(d.val/maxAbs)*50;
+      return `<circle cx="${x}" cy="${y}" r="4" fill="#c8f542"/>`;
+    }).join('');
+    const labels = chartData.map((d,i) => {
+      if (i % Math.max(1,Math.floor(chartData.length/3)) !== 0 && i !== chartData.length-1) return '';
+      const x = (i/(chartData.length-1))*290+5;
+      return `<text x="${x}" y="115" text-anchor="middle" font-size="9" fill="#555">${d.date.slice(5)}</text>`;
+    }).join('');
+    svgContent = `<svg class="chart" viewBox="0 0 300 120">
+      <line x1="0" y1="60" x2="300" y2="60" stroke="#333" stroke-width="1"/>
+      <polyline points="${pts}" fill="none" stroke="#c8f542" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      ${dots}${labels}
+    </svg>`;
+  }
+
+  const timeline = [...trades].sort((a,b)=>b.date.localeCompare(a.date)).map((t,i,arr) => {
+    const lineHtml = i < arr.length-1 ? '<div class="timeline-line"></div>' : '';
+    return `<div class="timeline-item">
+      <div class="timeline-dot-col">
+        <div class="timeline-dot ${t.type}"></div>
+        ${lineHtml}
+      </div>
+      <div>
+        <div class="timeline-date">${t.date}</div>
+        <div class="timeline-name">${t.name} <span class="${t.type==='buy'?'timeline-type-buy':'timeline-type-sell'}">${t.type==='buy'?'매수':'매도'}</span></div>
+        <div class="timeline-sub">${fmtCur(t.price*t.quantity,t.market)} · ${t.emotion}</div>
+      </div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('chart-content').innerHTML = `
+    <div class="chart-card">
+      <div class="chart-label">국내 주식 누적 손익 추이 (KRW)</div>
+      ${svgContent}
+    </div>
+    <div class="timeline-card">
+      <div class="pnl-label">매매 타임라인</div>
+      ${timeline || '<div style="color:#444;font-size:13px">기록이 없어요</div>'}
+    </div>
+  `;
+}
+
+// MODAL
+function openAddModal() {
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('f-date').value = today;
+  document.getElementById('f-ticker').value = '';
+  document.getElementById('f-name').value = '';
+  document.getElementById('f-price').value = '';
+  document.getElementById('f-qty').value = '';
+  document.getElementById('f-fee').value = '';
+  document.getElementById('f-memo').value = '';
+  document.getElementById('f-market').value = 'KR';
+  document.getElementById('f-type').value = 'buy';
+  selectedEmotion = '😄 신남';
+  document.querySelectorAll('.emotion-btn').forEach(b => b.classList.toggle('active', b.textContent === selectedEmotion));
+  document.getElementById('add-modal').classList.add('open');
+}
+
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+function selectEmotion(btn, em) {
+  selectedEmotion = em;
+  document.querySelectorAll('.emotion-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function addTrade() {
+  const ticker = document.getElementById('f-ticker').value.trim().toUpperCase();
+  const name = document.getElementById('f-name').value.trim();
+  const price = parseFloat(document.getElementById('f-price').value);
+  const qty = parseInt(document.getElementById('f-qty').value);
+  if (!ticker || !name || !price || !qty) { alert('종목코드, 종목명, 가격, 수량은 필수입니다.'); return; }
+  const trade = {
+    id: Date.now(),
+    date: document.getElementById('f-date').value,
+    ticker, name,
+    type: document.getElementById('f-type').value,
+    price, quantity: qty,
+    market: document.getElementById('f-market').value,
+    emotion: selectedEmotion,
+    memo: document.getElementById('f-memo').value.trim(),
+    fee: parseFloat(document.getElementById('f-fee').value) || 0,
+  };
+  trades.unshift(trade);
+  saveTrades(trades);
+  closeModal('add-modal');
+  renderAll();
+}
+
+function openDetail(id) {
+  const t = trades.find(t => t.id === id);
+  if (!t) return;
+  selectedTradeId = id;
+  document.getElementById('detail-title').textContent = `${t.name} (${t.ticker})`;
+  const memoHtml = t.memo ? `<div class="detail-section"><div class="detail-key">일기 / 메모</div><div class="memo-text">${t.memo}</div></div>` : '';
+  document.getElementById('detail-body').innerHTML = `
+    <div style="display:flex;gap:8px;margin-bottom:12px">
+      <span class="badge ${t.type==='buy'?'green':'red'}">${t.type==='buy'?'📈 매수':'📉 매도'}</span>
+      <span class="badge">${t.market==='KR'?'🇰🇷 국내':'🇺🇸 해외'}</span>
+      <span class="badge">${t.date}</span>
+    </div>
+    <div class="detail-section">
+      <div class="detail-grid">
+        <div><div class="detail-key">가격</div><div class="detail-val">${fmtCur(t.price,t.market)}</div></div>
+        <div><div class="detail-key">수량</div><div class="detail-val">${t.quantity}주</div></div>
+        <div><div class="detail-key">총금액</div><div class="detail-val">${fmtCur(t.price*t.quantity,t.market)}</div></div>
+        <div><div class="detail-key">수수료</div><div class="detail-val">${fmtCur(t.fee,t.market)}</div></div>
+      </div>
+    </div>
+    <div class="detail-section"><div class="detail-key">심리 상태</div><div style="font-size:20px;margin-top:6px">${t.emotion}</div></div>
+    ${memoHtml}
+    <button class="delete-btn" onclick="deleteTrade(${id})">🗑 기록 삭제</button>
+  `;
+  document.getElementById('detail-modal').classList.add('open');
+}
+
+function deleteTrade(id) {
+  if (!confirm('이 기록을 삭제할까요?')) return;
+  trades = trades.filter(t => t.id !== id);
+  saveTrades(trades);
+  closeModal('detail-modal');
+  renderAll();
+}
+
+// Close on overlay click
+document.querySelectorAll('.modal-overlay').forEach(el => {
+  el.addEventListener('click', e => { if (e.target === el) el.classList.remove('open'); });
+});
+
+// Init
+renderAll();
+</script>
+
+</body>
+</html>
